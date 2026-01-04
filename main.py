@@ -10,15 +10,25 @@ It runs:
 2. Treatment simulation (cognitive CRM)
 3. Generates Table 1 comparison
 4. Demonstrates use cases
+5. Demonstrates LangChain integration (if available)
 """
 
 from datetime import datetime
 from uuid import uuid4
+import os
 
 from src.simulation.simulator import Simulator, SimulationConfig, run_comparison
 from src.simulation.metrics import MetricsCalculator, SensitivityAnalyzer
 from src.use_cases.post_call_intelligence import PostCallIntelligenceUseCase
 from src.use_cases.nba_recommendations import NBARecommendationsUseCase
+
+# Check for LangChain availability
+LANGCHAIN_AVAILABLE = False
+try:
+    import langchain
+    LANGCHAIN_AVAILABLE = True
+except ImportError:
+    pass
 
 
 def run_simulation_demo():
@@ -186,15 +196,144 @@ def run_use_case_demo():
         print()
 
 
+def run_langchain_demo():
+    """Demonstrate the LangChain-based components."""
+    print("=" * 60)
+    print("LANGCHAIN INTEGRATION DEMO")
+    print("=" * 60)
+    print()
+
+    if not LANGCHAIN_AVAILABLE:
+        print("LangChain not installed. Install with:")
+        print("  pip install -e '.[langchain]'")
+        print()
+        print("Demonstrating mock components instead...")
+        print()
+
+    # Import LangChain components
+    from src.config import get_settings
+    from src.layers.intelligence import (
+        LangChainReasoningEngine,
+        create_memory_manager,
+        create_rag_engine
+    )
+    from src.layers.orchestration import (
+        AgentOrchestratorLangGraph,
+        create_agent_orchestrator
+    )
+
+    settings = get_settings()
+    print(f"Configuration loaded:")
+    print(f"  - App: {settings.app_name}")
+    print(f"  - LLM Provider: {settings.llm.provider.value}")
+    print(f"  - Vector Store: {settings.vectorstore.backend.value}")
+    print()
+
+    # Initialize components
+    print("Initializing LangChain components...")
+
+    # Memory Manager with ChromaDB
+    print("  - Memory Manager (ChromaDB)...")
+    memory_manager = create_memory_manager(
+        use_redis=False,
+        use_chroma=True,
+        chroma_persist_directory="./data/demo_chroma"
+    )
+    print(f"    Working memory persistent: {memory_manager.working.is_persistent}")
+    print(f"    Episodic memory has vector store: {memory_manager.episodic.has_vectorstore}")
+
+    # RAG Engine
+    print("  - RAG Engine...")
+    rag_engine = create_rag_engine(
+        use_chroma=True,
+        persist_directory="./data/demo_chroma"
+    )
+    print(f"    RAG available: {rag_engine.is_available}")
+
+    # Reasoning Engine
+    print("  - Reasoning Engine...")
+    reasoning_engine = LangChainReasoningEngine()
+    print(f"    LLM available: {reasoning_engine.is_available}")
+
+    # Agent Orchestrator with LangGraph
+    print("  - Agent Orchestrator (LangGraph)...")
+    orchestrator = create_agent_orchestrator(
+        reasoning_engine=reasoning_engine,
+        rag_engine=rag_engine,
+        memory_manager=memory_manager
+    )
+    print("    Orchestrator initialized")
+    print()
+
+    # Demonstrate workflow execution
+    print("Executing Post-Call Workflow...")
+    print("-" * 40)
+
+    sample_transcript = """
+    Sales Rep: Thanks for meeting with us today about your digital transformation.
+    Customer: Of course. We're evaluating several vendors for this project.
+    Sales Rep: What's driving this initiative for your organization?
+    Customer: We need to modernize our operations. The board has allocated $500K.
+    Sales Rep: That's a significant investment. What's your timeline?
+    Customer: We need to have a solution in place by Q2 next year.
+    Sales Rep: That's achievable. Who else is involved in the decision?
+    Customer: Our CTO and CFO will need to sign off. They're concerned about integration.
+    Sales Rep: Integration is a core strength for us. I'll prepare a technical brief.
+    """
+
+    opportunity_id = uuid4()
+
+    result = orchestrator.execute_workflow(
+        workflow_name="post_call",
+        opportunity_id=opportunity_id,
+        input_data={"transcript": sample_transcript},
+        user_id="demo_user"
+    )
+
+    print(f"Workflow Status: {result.get('status', 'unknown')}")
+    print(f"Steps Completed: {result.get('current_step', 'N/A')}")
+
+    outputs = result.get("outputs", {})
+    if outputs.get("analysis"):
+        analysis = outputs["analysis"]
+        print()
+        print("Analysis Results:")
+        if analysis.get("summary"):
+            summary = analysis["summary"]
+            print(f"  Summary: {summary.get('executive_summary', 'N/A')[:100]}...")
+        if analysis.get("risks"):
+            risks = analysis["risks"]
+            print(f"  Risk Level: {risks.get('overall_risk', 'N/A')}")
+        if analysis.get("stakeholders"):
+            stakeholders = analysis["stakeholders"].get("stakeholders", [])
+            print(f"  Stakeholders Found: {len(stakeholders)}")
+
+    if outputs.get("recommendations"):
+        recs = outputs["recommendations"]
+        next_steps = recs.get("next_steps", [])
+        print(f"  Recommendations: {len(next_steps)}")
+        for i, step in enumerate(next_steps[:2], 1):
+            print(f"    {i}. [{step.get('priority', 'normal')}] {step.get('action', 'N/A')[:50]}")
+
+    print()
+    metrics = orchestrator.get_execution_metrics()
+    print("Execution Metrics:")
+    print(f"  Total Executions: {metrics['total_executions']}")
+    print(f"  Success Rate: {metrics['success_rate']:.0%}")
+    print()
+
+
 def main():
     """Main entry point."""
     print()
-    print("╔══════════════════════════════════════════════════════════╗")
-    print("║       COGNITIVE CRM ARCHITECTURE DEMONSTRATION           ║")
-    print("║                                                          ║")
-    print("║  A Design Science Research Implementation                ║")
-    print("║  Author: Edward Monteiro                                 ║")
-    print("╚══════════════════════════════════════════════════════════╝")
+    print("+" + "=" * 58 + "+")
+    print("|       COGNITIVE CRM ARCHITECTURE DEMONSTRATION           |")
+    print("|                                                          |")
+    print("|  A Design Science Research Implementation                |")
+    print("|  Author: Edward Monteiro                                 |")
+    print("|                                                          |")
+    print("|  Now with LangChain, ChromaDB, and LangGraph!            |")
+    print("+" + "=" * 58 + "+")
     print()
 
     # Run simulation
@@ -202,6 +341,9 @@ def main():
 
     # Run use case demos
     run_use_case_demo()
+
+    # Run LangChain demo
+    run_langchain_demo()
 
     print()
     print("=" * 60)
@@ -215,9 +357,15 @@ def main():
     cycle_reduction = (1 - treatment.avg_sales_cycle_days / control.avg_sales_cycle_days) * 100
     admin_reduction = (1 - treatment.admin_hours_per_week / control.admin_hours_per_week) * 100
 
-    print(f"  ✓ Sales cycle reduced by {cycle_reduction:.1f}%")
-    print(f"  ✓ Admin time reduced by {admin_reduction:.1f}%")
-    print(f"  ✓ NBA acceptance rate: {treatment.nba_acceptance_rate * 100:.1f}%")
+    print(f"  [x] Sales cycle reduced by {cycle_reduction:.1f}%")
+    print(f"  [x] Admin time reduced by {admin_reduction:.1f}%")
+    print(f"  [x] NBA acceptance rate: {treatment.nba_acceptance_rate * 100:.1f}%")
+    print()
+    print("LangChain Integration Features:")
+    print("  [x] LLM Reasoning with Structured Outputs")
+    print("  [x] ChromaDB Vector Store for Semantic Search")
+    print("  [x] LangGraph Workflow Orchestration")
+    print("  [x] Human-in-the-Loop Approval Gates")
     print()
     print("See the paper for full methodology and limitations.")
     print()

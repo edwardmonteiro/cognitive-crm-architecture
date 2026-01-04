@@ -18,8 +18,15 @@ Memory Design:
 - Short-term working memory per opportunity
 - Long-term episodic memory across interactions
 - Policy memory for constraints
+
+LangChain Integration:
+- Structured outputs with Pydantic
+- ChromaDB/FAISS for vector search
+- Redis for persistent working memory
+- LangGraph for agent workflows
 """
 
+# Original implementations (baseline)
 from .reasoning import (
     ReasoningEngine,
     SummarizationTask,
@@ -36,7 +43,39 @@ from .memory import (
     PolicyMemory
 )
 
+# LangChain-based implementations
+from .schemas import (
+    InteractionSummary,
+    Objection,
+    ObjectionExtractionResult,
+    Stakeholder,
+    StakeholderMap,
+    Risk,
+    RiskAssessment,
+    NextStep,
+    NextStepPlan,
+    NBARecommendation,
+    NBARecommendationSet
+)
+from .reasoning_langchain import LangChainReasoningEngine
+from .memory_langchain import (
+    MemoryManagerLangChain,
+    WorkingMemoryLangChain,
+    EpisodicMemoryLangChain,
+    PolicyMemoryLangChain,
+    MemoryEntry,
+    create_memory_manager
+)
+from .rag_langchain import (
+    RAGEngineLangChain,
+    KnowledgeBaseBuilderLangChain,
+    RetrievedDocument,
+    create_rag_engine,
+    SourceType
+)
+
 __all__ = [
+    # Original implementations
     "ReasoningEngine",
     "SummarizationTask",
     "ObjectionExtractionTask",
@@ -48,5 +87,31 @@ __all__ = [
     "MemoryManager",
     "WorkingMemory",
     "EpisodicMemory",
-    "PolicyMemory"
+    "PolicyMemory",
+    # Pydantic schemas
+    "InteractionSummary",
+    "Objection",
+    "ObjectionExtractionResult",
+    "Stakeholder",
+    "StakeholderMap",
+    "Risk",
+    "RiskAssessment",
+    "NextStep",
+    "NextStepPlan",
+    "NBARecommendation",
+    "NBARecommendationSet",
+    # LangChain implementations
+    "LangChainReasoningEngine",
+    "MemoryManagerLangChain",
+    "WorkingMemoryLangChain",
+    "EpisodicMemoryLangChain",
+    "PolicyMemoryLangChain",
+    "MemoryEntry",
+    "create_memory_manager",
+    # RAG LangChain
+    "RAGEngineLangChain",
+    "KnowledgeBaseBuilderLangChain",
+    "RetrievedDocument",
+    "create_rag_engine",
+    "SourceType"
 ]

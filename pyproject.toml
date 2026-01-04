@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "cognitive-crm-architecture"
-version = "0.1.0"
+version = "0.2.0"
 description = "A Design Science Research implementation of AI-driven customer intelligence for CRM"
 readme = "README.md"
 license = {text = "MIT"}
@@ -17,7 +17,10 @@ keywords = [
     "design-science-research",
     "sales-automation",
     "rag",
-    "llm"
+    "llm",
+    "langchain",
+    "langgraph",
+    "agents"
 ]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -30,21 +33,74 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 requires-python = ">=3.10"
-dependencies = []
+
+# Core dependencies
+dependencies = [
+    "pydantic>=2.0.0",
+    "pydantic-settings>=2.0.0",
+]
 
 [project.optional-dependencies]
-llm = [
-    "openai>=1.0.0",
+# LangChain ecosystem for LLM orchestration
+langchain = [
+    "langchain>=0.3.0",
+    "langchain-core>=0.3.0",
+    "langchain-community>=0.3.0",
+    "langchain-openai>=0.2.0",
+    "langchain-anthropic>=0.2.0",
+    "langgraph>=0.2.0",
 ]
+
+# Vector stores and embeddings
+vectorstore = [
+    "chromadb>=0.5.0",
+    "faiss-cpu>=1.8.0",
+    "sentence-transformers>=3.0.0",
+]
+
+# Memory and caching
+memory = [
+    "redis>=5.0.0",
+]
+
+# Observability and monitoring
+observability = [
+    "langsmith>=0.1.0",
+    "opentelemetry-api>=1.20.0",
+    "opentelemetry-sdk>=1.20.0",
+]
+
+# LLM providers
+openai = [
+    "openai>=1.0.0",
+    "tiktoken>=0.7.0",
+]
+anthropic = [
+    "anthropic>=0.34.0",
+]
+ollama = [
+    "ollama>=0.3.0",
+]
+
+# Development
 dev = [
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",
+    "pytest-asyncio>=0.23.0",
     "black>=23.0.0",
     "ruff>=0.1.0",
     "mypy>=1.0.0",
+    "ipython>=8.0.0",
 ]
+
+# Full installation with all features
+full = [
+    "cognitive-crm-architecture[langchain,vectorstore,memory,observability,openai,anthropic]",
+]
+
+# All including dev
 all = [
-    "cognitive-crm-architecture[llm,dev]",
+    "cognitive-crm-architecture[full,dev]",
 ]
 
 [project.urls]
@@ -61,6 +117,7 @@ include = ["src*"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
+asyncio_mode = "auto"
 
 [tool.black]
 line-length = 100
